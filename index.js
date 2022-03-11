@@ -18,7 +18,7 @@ app.use(cors({
     origin: 'http://localhost:4200'
 }))
 
-// to parse JSON
+// to parse json
 app.use(express.json())
 
 // application specific middleware
@@ -26,6 +26,8 @@ const logMiddleware = (req, res, next) => {
     console.log("Middleware");
     next()
 }
+app.use(logMiddleware)
+
 
 // to resolve http request
 
@@ -54,7 +56,46 @@ app.delete('/', (req, res) => {
     res.send("DELETE METHOD")
 });
 
+
+// JWT middleware - to verify token
+const jwtMiddleware = (req, res, next) => {
+    try {
+        const token = req.headers["x-access-token"]
+        const data = jwt.verify(token, 'supersecretkey123456')
+        req.currentAcc = data.currentAcc
+        next()
+    }
+    catch {
+        res.status(422).json({
+            statusCode: 422,
+            status: false,
+            message: "Please Login"
+        })
+    }
+}
+
+// register API
+app.post('/register', (req, res) => {
+    // asynchronous
+    dataService.register(req.body.uid, req.body.uname, req.body.pwd)
+        .then(result => {
+            res.status(result.statusCode).json(result)
+        })
+})
+
+
+// login API
+app.post('/login', (req, res) => {
+
+    dataService.login(req.body.uid, req.body.pwd)
+        .then(result => {
+            res.status(result.statusCode).json(result)
+        })
+})
+
+
+
 // set port for server
-app.listen(3000, ()=>{
+app.listen(3000, () => {
     console.log("server started at port number: 3000");
 })
